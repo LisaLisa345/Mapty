@@ -16,9 +16,20 @@ if (navigator.geolocation) {
     function (position) {
       const { latitude } = position.coords;
       const { longitude } = position.coords;
-      console.log(
-        `https://www.google.com/maps/@${latitude},${longitude},12z?entry=ttu`
-      );
+
+      const cords = [latitude, longitude];
+
+      const map = L.map('map').setView(cords, 13);
+
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution:
+          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      }).addTo(map);
+
+      L.marker(cords)
+        .addTo(map)
+        .bindPopup('A pretty CSS3 popup.<br> Easily customizable.')
+        .openPopup();
     },
     function () {
       alert('Could not get your position');
