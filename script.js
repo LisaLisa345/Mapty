@@ -5,6 +5,7 @@
 class Workout {
   date = new Date();
   id = (Date.now() + '').slice(-10);
+  clicks = 0;
 
   constructor(coords, distance, duration) {
     this.coords = coords; //[lat, lng]
@@ -17,6 +18,10 @@ class Workout {
     const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
     this.description = `${this.type[0].toUpperCase()}${this.type.slice(1)} on ${months[this.date.getMonth()]} ${this.date.getDate()}`;
 
+  }
+
+  click() {
+    this.clicks++;
   }
 }
 
@@ -64,12 +69,14 @@ const inputElevation = document.querySelector('.form__input--elevation');
 class App {
   #mapEvent;
   #map;
+  #mapZoomLevel = 13;
   #workouts = [];
 
   constructor() {
     this._getPosition();
     inputType.addEventListener('change', this._toggleElevationField);
     form.addEventListener('submit', this._newWorkout.bind(this));
+    containerWorkouts.addEventListener('click', this._moveToPopup.bind(this));
   }
 
   _getPosition() {
@@ -89,7 +96,7 @@ class App {
 
     const coords = [latitude, longitude];
 
-    this.#map = L.map('map').setView(coords, 13);
+    this.#map = L.map('map').setView(coords, this.#mapZoomLevel);
 
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution:
@@ -117,6 +124,7 @@ class App {
       inputElevation.value =
         '';
   }
+
   _toggleElevationField() {
     inputCadence.parentElement.classList.toggle('form__row--hidden');
     inputElevation.parentElement.classList.toggle('form__row--hidden');
@@ -139,8 +147,6 @@ class App {
     if (type === 'running') {
       const cadence = +inputCadence.value;
       //check if data is valid
-      console.log(validInputs(distance, duration, cadence));
-      console.log(allPositive(distance, duration, cadence));
 
       if (
         !validInputs(distance, duration, cadence) ||
@@ -174,6 +180,7 @@ class App {
     //Hide the form and clear  input fields
     this._hideForm();
   }
+
   _renderWorkoutMarker(workout) {
     L.marker(workout.coords)
       .addTo(this.#map)
@@ -191,6 +198,7 @@ class App {
       )
       .openPopup();
   }
+
   _renderWorkout(workout) {
     let html = `
         <li class="workout workout--${workout.type}" data-id="${workout.id}">
@@ -238,6 +246,22 @@ class App {
       `;
     }
     form.insertAdjacentHTML('afterend', html);
+  }
+
+  _moveToPopup(event) {
+    const workoutEl = event.target.closest('.workout');
+    if (!workoutEl) return;
+
+    const workout = this.#workouts.find(el => el.id === workoutEl.dataset.id);
+    this.#map.setView(workout.coords, this.#mapZoomLevel, {
+      animate: true,
+      pan: {
+        duration: 1,
+      },
+    });
+
+    workout.click();
+    console.log(workout);
   }
 }
 
